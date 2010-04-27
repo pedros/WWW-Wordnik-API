@@ -5,7 +5,7 @@ Makefile.PL
 README
 lib/WWW/Wordnik/API.pm
 t/00.load.t
-t/perlcritic.t
+t/10.object-creation.t
 t/pod-coverage.t
 t/pod.t
 META.yml
