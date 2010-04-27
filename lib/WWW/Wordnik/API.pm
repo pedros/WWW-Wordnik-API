@@ -509,8 +509,6 @@ Default C<$format>: I<json>. Other accepted formats are I<xml> and I<perl>.
 
 Default C<$cache>: I<10>. Number of requests to cache. Deletes the latest one if cache fills up.
 
-=back
-
 
 =item debug()
 
