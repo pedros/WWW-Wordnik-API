@@ -7,333 +7,361 @@ use Carp;
 use LWP::UserAgent;
 
 use version; our $VERSION = qv('0.0.1');
-             our $AUTOLOAD;
+our $AUTOLOAD;
 
 use constant {
-    API_VERSION  => '3',
+    API_VERSION  => 3,
     API_BASE_URL => 'http://api.wordnik.com',
-    API_KEY      => 'abcdefghijklmnopqrstuvxwyz',
+    API_KEY      => 'YOUR KEY HERE',
     API_FORMAT   => 'json',
-    MODULE_NAME  => 'WWW::Wordnik::API',
-    DEBUG        => 0,
     CACHE        => 10,
+    DEBUG        => 0,
+    MODULE_NAME  => 'WWW::Wordnik::API',
+    USE_JSON     => 0,
 };
 
 my $fields = {
-              server_uri  => API_BASE_URL . q{/api-v} . API_VERSION,
-              api_key     => API_KEY,
-              version     => API_VERSION,
-              format      => API_FORMAT,
-              cache       => CACHE,
-              _user_agent => LWP::UserAgent->new(
-                                                 agent           => 'Perl-' . MODULE_NAME . q{/} . $VERSION,
-                                                 default_headers => HTTP::Headers->new(':api_key' => API_KEY),
-                                                ),
-              _formats    => {json => 1, xml => 1, perl => 1},
-              _versions   => {1    => 0, 2   => 0, 3    => 1},
-              _debug      => DEBUG,
-              _cache      => {count => 0, max => CACHE, last_request => undef, requests => {}},
-             };
+    server_uri => API_BASE_URL . q{/api-v} . API_VERSION,
+    api_key    => API_KEY,
+    version    => API_VERSION,
+    format     => API_FORMAT,
+    cache      => CACHE,
+    debug      => DEBUG,
+    _formats   => { json => 1, xml => 1, perl => 1 },
+    _versions  => { 1 => 0, 2 => 0, 3 => 1 },
+    _cache =>
+        { count => 0, max => CACHE, last_request => undef, requests => {} },
+    _user_agent => LWP::UserAgent->new(
+        agent           => 'Perl-' . MODULE_NAME . q{/} . $VERSION,
+        default_headers => HTTP::Headers->new( ':api_key' => API_KEY ),
+    ),
+    _json => USE_JSON,
+};
 
 sub new {
-    my ($class, %args) = @_;
+    my ( $class, %args ) = @_;
+
+    eval { require JSON; JSON->import() };
+    $fields->{_json} = 'available' unless $@;
 
     bless $fields, $class;
 
-    while (my ($key, $value) = each %args) {
-      croak "Can't access '$key' field in class $class"
-        if !exists $fields->{$key} or $key =~ m/^_/;
+    while ( my ( $key, $value ) = each %args ) {
+        croak "Can't access '$key' field in class $class"
+            if !exists $fields->{$key}
+                or $key =~ m/^_/;
 
-      $fields->$key($value);
+        $fields->$key($value);
     }
 
     return $fields;
 }
 
 sub server_uri {
-    my ($self, $uri) = @_;
+    my ( $self, $uri ) = @_;
 
-    if (defined $uri) {
-      return $self->{server_uri} = $uri;
+    if ( defined $uri ) {
+        return $self->{server_uri} = $uri;
     }
     else {
-      return $self->{server_uri};
+        return $self->{server_uri};
     }
 }
 
 sub api_key {
-    my ($self, $key) = @_;
+    my ( $self, $key ) = @_;
 
-    if (defined $key) {
-      return $self->{api_key} = $key;
+    if ( defined $key ) {
+        $fields->{_user_agent}->default_headers->header( ':api_key' => $key );
+        return $self->{api_key} = $key;
     }
     else {
-      return $self->{api_key};
+        return $self->{api_key};
     }
 }
 
 sub version {
-    my ($self, $version) = @_;
+    my ( $self, $version ) = @_;
 
-    if (defined $version) {
-      croak "Unsupported version $version"
-        unless $self->{_versions}->{$version};
-      return $self->{version} = $version;
+    if ( defined $version ) {
+        croak "Unsupported api version: '$version'"
+            unless $self->{_versions}->{$version};
+        return $self->{version} = $version;
     }
     else {
-      return $self->{version};
+        return $self->{version};
     }
 }
 
 sub format {
-    my ($self, $format) = @_;
+    my ( $self, $format ) = @_;
 
-    if (defined $format) {
-      croak "Unsupported format $format"
-        unless $self->{_formats}->{$format};
+    if ( defined $format ) {
+        croak "Unsupported api format: '$format'"
+            unless $self->{_formats}->{$format};
 
-      if ('perl' eq $format) {
-          eval {require JSON; JSON->import()};
-          croak qq(Use of 'perl' as an output format requires JSON to be installed:\n$@)
-              if $@;
-      }
+        $self->_json_available
+            if 'perl' eq $format;
 
-      return $self->{format} = $format;
+        return $self->{format} = $format;
     }
     else {
-      return $self->{format};
+        return $self->{format};
     }
 }
 
 sub cache {
-    my ($self, $cache) = @_;
+    my ( $self, $cache ) = @_;
 
-    if (defined $cache and $cache =~ m/\d+/) {
-      return $self->{cache} = $cache;
+    if ( defined $cache and $cache =~ m/\d+/ ) {
+        return $self->{cache} = $cache;
     }
     else {
-      return $self->{cache};
+        return $self->{cache};
+    }
+}
+
+sub debug {
+    my ( $self, $debug ) = @_;
+
+    if ( defined $debug ) {
+        return $self->{debug} = $debug;
+    }
+    else {
+        return $self->{debug};
     }
 }
 
 sub word {
-    my ($self, $word, %args) = @_;
-
-    return unless $word;
-
-    my %parameters = (useSuggest => {true => 0, false => 1},
-                      literal    => {true => 1, false => 0},
-                     );
-
-    for (keys %args) {
-      croak 'Invalid argument key or value' unless exists $parameters{$_}
-        and exists $parameters{$_}->{$args{$_}};
-    }
-
-    my $request = $word;
-    $request   .= "?$_=$args{$_}" for keys %args;
-
-    return
-      $self->_get_request ($self->server_uri . '/word.' . ('perl' eq $self->format ? 'json' : $self->format) . "/$request");
-}
-
-sub phrases {
-    my ($self, $word, %args) = @_;
-
-    return unless $word;
-
-    my %parameters = (count => 10);
-
-    for (keys %args) {
-      croak 'Invalid argument key or value' unless exists $parameters{$_}
-        and $args{$_} =~ m/\d+/;
-    }
-
-    my $request = "$word/phrases";
-    $request   .= "?$_=$args{$_}" for keys %args;
-
-    return
-      $self->_get_request ($self->server_uri . '/word.' . ('perl' eq $self->format ? 'json' : $self->format) . "/$request");
-}
-
-sub definitions {
-    my ($self, $word, %args) = @_;
-
-    return unless $word;
-
-    my %parameters = (count        => 5,
-                      partOfSpeech => {
-                                       noun         => 0,
-                                       verb         => 0,
-                                       adjective    => 0,
-                                       adverb       => 0,
-                                       idiom        => 0,
-                                       article      => 0,
-                                       abbreviation => 0,
-                                       preposition  => 0,
-                                       prefix       => 0,
-                                       interjection => 0,
-                                       suffix       => 0,
-                                      }
-                     );
-
-    my $request = "$word/definitions";
-
-    for (keys %args) {
-
-      if ('count' eq $_) {
-        croak 'Invalid argument key or value' unless $args{count} =~ m/\d/;
-        $request .= "?count=$args{count}";
-      }
-      elsif ('ARRAY' eq ref $args{partOfSpeech}) {
-        for my $type (@{$args{partOfSpeech}}) {
-          croak 'Invalid argument key or value' unless exists $parameters{partOfSpeech}->{$type};
-        }
-        $request .= "?partOfSpeech=" . join q{,}, @{$args{partOfSpeech}};
-      }
-      else {
-        croak 'Parameter "partOfSpeech" requires a reference to an array';
-      }
-    }
-
-    return
-      $self->_get_request ($self->server_uri . '/word.' . ('perl' eq $self->format ? 'json' : $self->format) . "/$request");
-}
-
-sub examples {
-    my ($self, $word) = @_;
-
-    return unless $word;
-
-    my $request = "$word/examples";
-
-    return
-      $self->_get_request ($self->server_uri . '/word.' . ('perl' eq $self->format ? 'json' : $self->format) . "/$request");
-}
-
-sub related {
-    my ($self, $word, %args) = @_;
-
-    return unless $word;
-
-    my %parameters = (type => {
-                               synonym    => 0,
-                               antonym    => 0,
-                               form       => 0,
-                               equivalent => 0,
-                               hypoynm    => 0,
-                               variant    => 0,
-                              },
-                     );
-
-    my $request = "$word/related";
-
-    if ('ARRAY' eq ref $args{type}) {
-      for my $type (@{$args{type}}) {
-        croak 'Invalid argument key or value' unless exists $parameters{type}->{$type};
-      }
-      $request .= "?type=" . join q{,}, @{$args{type}};
-    }
-    else {
-      croak 'Parameter "type" requires a reference to an array';
-    }
-  
-    return
-      $self->_get_request ($self->server_uri . '/word.' . ('perl' eq $self->format ? 'json' : $self->format) . "/$request");
-}
-
-sub frequency {
-    my ($self, $word) = @_;
-
-    return unless $word;
-
-    my $request = "$word/frequency";
-
-    return
-      $self->_get_request ($self->server_uri . '/word.' . ('perl' eq $self->format ? 'json' : $self->format) . "/$request");
-}
-
-sub punctuationFactor {
-    my ($self, $word) = @_;
-
-    return unless $word;
-
-    my $request = "$word/punctuationFactor";
-
-    return
-      $self->_get_request ($self->server_uri . '/word.' . ('perl' eq $self->format ? 'json' : $self->format) . "/$request");
-}
-
-sub suggest {
-    my ($self, $word, %args) = @_;
+    my ( $self, $word, %args ) = @_;
 
     return unless $word;
 
     my %parameters = (
-                      count   => 10,
-                      startAt => 0,
-                     );
+        useSuggest => { true => 0, false => 1 },
+        literal    => { true => 1, false => 0 },
+    );
 
-    for (keys %args) {
-      croak 'Invalid argument key or value' unless exists $parameters{$_}
-        and $args{$_} =~ m/\d+/;
+    for ( keys %args ) {
+        croak "Invalid argument key or value: '$_'"
+            unless exists $parameters{$_}
+                and exists $parameters{$_}->{ $args{$_} };
     }
 
-    my $request = "$word";
-    $request   .= "?$_=$args{$_}" for keys %args;
+    my $query = $word;
+    $query .= "?$_=$args{$_}" for keys %args;
 
-    return
-      $self->_get_request ($self->server_uri . '/suggest.' . ('perl' eq $self->format ? 'json' : $self->format) . "/$request");
+    return $self->_send_request( $self->_build_request( 'word', $query ) );
+}
+
+sub phrases {
+    my ( $self, $word, %args ) = @_;
+
+    return unless $word;
+
+    my %parameters = ( count => 10 );
+
+    for ( keys %args ) {
+        croak "Invalid argument key or value: '$_'"
+            unless exists $parameters{$_}
+                and $args{$_} =~ m/\d+/;
+    }
+
+    my $query = "$word/phrases";
+    $query .= "?$_=$args{$_}" for keys %args;
+
+    return $self->_send_request( $self->_build_request( 'word', $query ) );
+}
+
+sub definitions {
+    my ( $self, $word, %args ) = @_;
+
+    return unless $word;
+
+    my %parameters = (
+        count        => 5,
+        partOfSpeech => {
+            noun         => 0,
+            verb         => 0,
+            adjective    => 0,
+            adverb       => 0,
+            idiom        => 0,
+            article      => 0,
+            abbreviation => 0,
+            preposition  => 0,
+            prefix       => 0,
+            interjection => 0,
+            suffix       => 0,
+        }
+    );
+
+    my $query = "$word/definitions";
+
+    for ( keys %args ) {
+
+        if ( 'count' eq $_ ) {
+            croak "Invalid argument key or value: '$_'"
+                unless $args{count} =~ m/\d/;
+            $query .= "?count=$args{count}";
+        }
+        elsif ( 'ARRAY' eq ref $args{partOfSpeech} ) {
+            for my $type ( @{ $args{partOfSpeech} } ) {
+                croak "Invalid argument key or value: '$type'"
+                    unless exists $parameters{partOfSpeech}->{$type};
+            }
+            $query .= "?partOfSpeech=" . join q{,}, @{ $args{partOfSpeech} };
+        }
+        else {
+            croak "Parameter 'partOfSpeech' requires a reference to an array";
+        }
+    }
+
+    return $self->_send_request( $self->_build_request( 'word', $query ) );
+}
+
+sub examples {
+    my ( $self, $word ) = @_;
+
+    return unless $word;
+
+    my $query = "$word/examples";
+
+    return $self->_send_request( $self->_build_request( 'word', $query ) );
+}
+
+sub related {
+    my ( $self, $word, %args ) = @_;
+
+    return unless $word;
+
+    my %parameters = (
+        type => {
+            synonym    => 0,
+            antonym    => 0,
+            form       => 0,
+            equivalent => 0,
+            hyponym    => 0,
+            variant    => 0,
+        },
+    );
+
+    my $query = "$word/related";
+
+    if (exists $args{type}) {
+        if ( 'ARRAY' eq ref $args{type} ) {
+            for my $type ( @{ $args{type} } ) {
+
+                croak "Invalid argument key or value: '$type'"
+                    unless exists $parameters{type}->{$type};
+            }
+            $query .= "?type=" . join q{,}, @{ $args{type} };
+        }
+        else {
+            croak "Parameter 'type' requires a reference to an array";
+        }
+    }
+
+    return $self->_send_request( $self->_build_request( 'word', $query ) );
+}
+
+sub frequency {
+    my ( $self, $word ) = @_;
+
+    return unless $word;
+
+    my $query = "$word/frequency";
+
+    return $self->_send_request( $self->_build_request( 'word', $query ) );
+}
+
+sub punctuationFactor {
+    my ( $self, $word ) = @_;
+
+    return unless $word;
+
+    my $query = "$word/punctuationFactor";
+
+    return $self->_send_request( $self->_build_request( 'word', $query ) );
+}
+
+sub suggest {
+    my ( $self, $word, %args ) = @_;
+
+    return unless $word;
+
+    my %parameters = (
+        count   => 10,
+        startAt => 0,
+    );
+
+    for ( keys %args ) {
+        croak "Invalid argument key or value: '$_'"
+            unless exists $parameters{$_}
+                and $args{$_} =~ m/\d+/;
+    }
+
+    my $query = "$word";
+    $query .= "?$_=$args{$_}" for keys %args;
+
+    return $self->_send_request( $self->_build_request( 'suggest', $query ) );
 }
 
 sub wordoftheday {
     my ($self) = @_;
 
-    return
-      $self->_get_request ($self->server_uri . '/wordoftheday.' . ('perl' eq $self->format ? 'json' : $self->format));
+    return $self->_send_request( $self->_build_request('wordoftheday') );
 }
 
 sub randomWord {
-    my ($self, %args) = @_;
+    my ( $self, %args ) = @_;
 
-    my %parameters = (hasDictionaryDef => {true => 0, false => 1},);
+    my %parameters = ( hasDictionaryDef => { true => 0, false => 1 }, );
 
-    for (keys %args) {
-      croak 'Invalid argument key or value' unless exists $parameters{$_}
-        and exists $parameters{$_}->{$args{$_}};
+    for ( keys %args ) {
+        croak "Invalid argument key or value: '$_'"
+            unless exists $parameters{$_}
+                and exists $parameters{$_}->{ $args{$_} };
     }
 
-    my $request = "randomWord";
-    $request   .= "?$_=$args{$_}" for keys %args;
+    my $query = "randomWord";
+    $query .= "?$_=$args{$_}" for keys %args;
 
-    return
-      $self->_get_request ($self->server_uri . '/words.' . ('perl' eq $self->format ? 'json' : $self->format) . "/$request");
+    return $self->_send_request( $self->_build_request( 'words', $query ) );
 }
 
+sub _build_request {
+    my ( $self, $namespace, $query ) = @_;
 
-sub _get_request {
-    my ($self, $request) = @_;
+    my $request = $self->server_uri . q{/} . $namespace . q{.};
+    $request .= 'perl' eq $self->format ? 'json' : $self->format;
+    $request .= defined $query ? "/$query" : q{};
 
-    return $request if $self->{_debug};
+    return $request;
+}
 
-    if ($self->cache and exists $self->{_cache}->{requests}->{$request}) {
+sub _send_request {
+    my ( $self, $request ) = @_;
+
+    return $request if $self->{debug};
+
+    if ( $self->cache and exists $self->{_cache}->{requests}->{$request} ) {
         return $self->{_cache}->{requests}->{$request};
     }
     else {
         my $data = $self->{_user_agent}->get($request)->content;
-        $data    = from_json($data) if 'perl' eq $self->format;
+        $data = from_json($data) if 'perl' eq $self->format;
 
-        return $self->_cache_data ($request, $data);
+        return $self->_cache_data( $request, $data );
     }
 }
 
 sub _cache_data {
-    my ($self, $request, $data) = @_;
+    my ( $self, $request, $data ) = @_;
 
     my $c = $self->{_cache};
 
-    if ($c->{count} and $c->{count} >= $c->{max}) {
-        delete $c->{requests}->{$c->{last_request}};
+    if ( $c->{count} and $c->{count} >= $c->{max} ) {
+        delete $c->{requests}->{ $c->{last_request} };
         $c->{count}--;
     }
 
@@ -343,8 +371,14 @@ sub _cache_data {
     return $c->{requests}->{$request} = $data;
 }
 
+sub _json_available {
+    my ($self) = @_;
 
-1; # Magic true value required at end of module
+    croak "The operation you requested requires JSON to be installed"
+        unless $self->{_json};
+}
+
+1;    # Magic true value required at end of module
 __END__
 
 =head1 NAME
@@ -360,21 +394,55 @@ This document describes WWW::Wordnik::API version 0.0.1
 
     use WWW::Wordnik::API;
 
-    my $WN = WWW::Wordnik::API->new();
-    $WN->api_key('your api key here');
+    my $p = WWW::Wordnik::API->new();
 
-    ### OR
+    $p->api_key('your api key here');
+    $p->debug(1);
+    $p->cache(100);
+    $p->format('perl');
 
-    my $WN = WWW::Wordnik::API->new(api_key => 'your api key here');
+    $p->word('Perl');
+    $p->word( 'Perl', useSuggest => 'true' );
+    $p->word( 'Perl', literal    => 'false' );
 
-    $WN->word('bollocks');
-    $WN->phrases('bollocks');
+    $p->phrases('Python');
+    $p->phrases( 'Python', count => 10 );
+
+    $p->definitions('Ruby');
+    $p->definitions( 'Ruby', count => 20 );
+    $p->definitions('Ruby',
+                    partOfSpeech => [
+                        qw/noun verb adjective adverb idiom article abbreviation preposition prefix interjection suffix/
+                    ]
+    );
+
+    $p->examples('Java');
+
+    $p->related('Lisp');
+    $p->related('Lisp', type => [qw/synonym antonym form equivalent hyponym variant/]);
+
+    $p->frequency('Scheme');
+
+    $p->punctuationFactor('Prolog');
+
+    $p->suggest('C');
+    $p->suggest('C', count => 4);
+    $p->suggest('C', startAt => 6);
+
+    $p->wordoftheday,
+
+    $p->randomWord(hasDictionaryDef => 'true');
 
 
 =head1 DESCRIPTION
 
-Write a full description of the module and its features here.
-Use subsections (=head2, =head3) as appropriate.
+This module implements version 3 of the Wordnik API (L<http://docs.wordnik.com/api>).
+It provides a simple object-oriented interface with methods named after the REST ones provided by Wordnik.
+You should therefore be able to follow their documentation only and still work with this module.
+
+At this point, all this module does is build request URIs and ship them out as GET methods to LWP::UserAgent.
+Response headers are not checked for 404s, etc. Likewise, response data is not post-processed in any way, other
+than optionally being parsed from C<JSON> to C<Perl> data structures. Data::Dumper should be of help there.
 
 
 =head1 INTERFACE 
@@ -440,6 +508,15 @@ Default C<$format>: I<json>. Other accepted formats are I<xml> and I<perl>.
 =item cache($cache)
 
 Default C<$cache>: I<10>. Number of requests to cache. Deletes the latest one if cache fills up.
+
+=back
+
+
+=item debug()
+
+=item debug($debug)
+
+Default C<$debug>: I<0>. Don't sent GET requests to Wordnik. Return the actual request as a string.
 
 =back
 
@@ -579,22 +656,35 @@ or
 
 =head1 DIAGNOSTICS
 
-    List every single error and warning message that the module can
-    generate (even the ones that will "never happen"), with a full
-    explanation of each problem, one or more likely causes, and any
-    suggested remedies.
-
 =over
 
-=item C<< Error message here, perhaps with %s placeholders >>
+=item C<< "Can't access '$key' field in class $class" >>
 
-[Description of error here]
+Private or inexistent member variable.
 
-=item C<< Another error message here >>
+=item C<< "Invalid argument key or value: '$type'" >>
 
-[Description of error here]
+Inexistent query parameter, or wrong value passed to existing parameter.
 
-[Et cetera, et cetera]
+=item C<< "Parameter 'partOfSpeech' requires a reference to an array" >>
+
+partOfSpeech => [qw/.../].
+
+=item C<< "Parameter 'type' requires a reference to an array" >>
+
+type => [qw/.../].
+
+=item C<< "The operation you requested requires JSON to be installed" >>
+
+perl -MCPAN -e 'install JSON'.
+
+=item C<< "Unsupported api format: '$format'" >>
+
+Supported formats are 'perl', 'json', 'xml'.
+
+=item C<< "Unsupported api version: '$version'" >>
+
+The only API version supported by this module is 3.
 
 =back
 
@@ -606,8 +696,8 @@ WWW::Wordnik::API requires no configuration files or environment variables.
 
 =head1 DEPENDENCIES
 
-This module requires the core modules L<Test::More>, L<version> and L<Carp>, and L<LWP::UserAgent> from C<CPAN>.
-Additionally, it recommends-requires L<JSON> from C<CPAN> for getting data in Perl data structures.
+This module requires the core modules C<Test::More>, C<version> and C<Carp>, and C<LWP::UserAgent> from C<CPAN>.
+Additionally, it recommends-requires C<JSON> from C<CPAN> for getting data in Perl data structures.
 
 
 =head1 INCOMPATIBILITIES
@@ -619,9 +709,27 @@ None reported.
 
 No bugs have been reported.
 
+Response headers are not checked for 404s, etc. Likewise, response data is not post-processed in any way, other
+than optionally being parsed from C<JSON> to C<Perl> data structures. Data::Dumper should be of help there.
+
 Please report any bugs or feature requests to
 C<bug-www-wordnik-api@rt.cpan.org>, or through the web interface at
 L<http://rt.cpan.org>.
+
+
+=head1 TODO
+
+=over
+
+=item Error checking
+
+Implement basic HTTP error checking on response headers.
+
+=item Post-processing
+
+Add filtering methods on response data.
+
+=back
 
 
 =head1 AUTHOR
