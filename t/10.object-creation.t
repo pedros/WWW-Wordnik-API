@@ -15,8 +15,9 @@ my $wn = new_ok('WWW::Wordnik::API');
   eval join q{}, <DATA>;
 
   # need to delete code refs, since is_deeply only checks referents
-  delete $VAR1->{_user_agent};
-  delete $wn->{_user_agent};
+  # also delete _json, which value depends on JSON being installed
+  delete @{$VAR1}{qw/_user_agent _json/};
+  delete @{$wn}{qw/_user_agent _json/};
 
   is_deeply($wn, $VAR1, 'Object creation');
 }
