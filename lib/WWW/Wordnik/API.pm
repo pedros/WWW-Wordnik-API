@@ -1,4 +1,4 @@
-6~package WWW::Wordnik::API;
+package WWW::Wordnik::API;
 
 use warnings;
 use strict;
@@ -21,16 +21,15 @@ use constant {
 };
 
 my $fields = {
-    server_uri => API_BASE_URL . q{/api-v} . API_VERSION,
-    api_key    => API_KEY,
-    version    => API_VERSION,
-    format     => API_FORMAT,
-    cache      => CACHE,
-    debug      => DEBUG,
-    _formats   => { json => 1, xml => 1, perl => 1 },
-    _versions  => { 1 => 0, 2 => 0, 3 => 1 },
-    _cache =>
-        { count => 0, max => CACHE, last_request => undef, requests => {} },
+    server_uri  => API_BASE_URL . q{/api-v} . API_VERSION,
+    api_key     => API_KEY,
+    version     => API_VERSION,
+    format      => API_FORMAT,
+    cache       => CACHE,
+    debug       => DEBUG,
+    _formats    => { json => 1, xml => 1, perl => 1 },
+    _versions   => { 1 => 0, 2 => 0, 3 => 1 },
+    _cache      => { max => CACHE, requests => {}, data => [] },
     _user_agent => LWP::UserAgent->new(
         agent           => 'Perl-' . MODULE_NAME . q{/} . $VERSION,
         default_headers => HTTP::Headers->new( ':api_key' => API_KEY ),
@@ -247,7 +246,7 @@ sub related {
 
     my $query = "$word/related";
 
-    if (exists $args{type}) {
+    if ( exists $args{type} ) {
         if ( 'ARRAY' eq ref $args{type} ) {
             for my $type ( @{ $args{type} } ) {
 
@@ -345,14 +344,42 @@ sub _send_request {
     return $request if $self->{debug};
 
     if ( $self->cache and exists $self->{_cache}->{requests}->{$request} ) {
-        return $self->{_cache}->{requests}->{$request};
+
+        return ${ $self->{_cache}->{requests}->{$request} };
     }
     else {
         my $data = $self->{_user_agent}->get($request)->content;
+
         $data = from_json($data) if 'perl' eq $self->format;
 
         return $self->_cache_data( $request, $data );
     }
+}
+
+sub _pop_cache {
+    my ($self) = @_;
+
+    my $c = $self->{_cache};
+
+    my $oldest = pop @{ $c->{data} };
+
+    my ( $request, $data ) = @{$oldest};
+
+    delete $c->{requests}->{$request};
+
+    return $data;
+}
+
+sub _load_cache {
+    my ( $self, $request, $data ) = @_;
+
+    my $c = $self->{_cache};
+
+    $c->{requests}->{$request} = \$data;
+
+    unshift @{ $c->{data} }, [ $request, $data ];
+
+    return $data;
 }
 
 sub _cache_data {
@@ -360,15 +387,10 @@ sub _cache_data {
 
     my $c = $self->{_cache};
 
-    if ( $c->{count} and $c->{count} >= $c->{max} ) {
-        delete $c->{requests}->{ $c->{last_request} };
-        $c->{count}--;
-    }
+    $c->_pop_cache
+        if @{ $c->{data} } >= $c->{max};
 
-    $c->{last_request} = $request;
-    $c->{count}++;
-
-    return $c->{requests}->{$request} = $data;
+    return $self->_load_cache( $request, $data );
 }
 
 sub _json_available {
@@ -507,7 +529,7 @@ Default C<$format>: I<json>. Other accepted formats are I<xml> and I<perl>.
 
 =item cache($cache)
 
-Default C<$cache>: I<10>. Number of requests to cache. Deletes the latest one if cache fills up.
+Default C<$cache>: I<10>. Number of requests to cache. Deletes the oldest request if cache fills up.
 
 
 =item debug()
