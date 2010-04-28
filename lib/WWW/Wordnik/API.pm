@@ -7,7 +7,6 @@ use Carp;
 use LWP::UserAgent;
 
 use version; our $VERSION = qv('0.0.1');
-our $AUTOLOAD;
 
 use constant {
     API_VERSION  => 3,
