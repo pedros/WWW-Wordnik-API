@@ -21,7 +21,7 @@ is($wn->server_uri('http://www.example.com'), 'http://www.example.com', 'set ser
 is($wn->api_key('MY KEY HERE'),               'MY KEY HERE',            'set api_key'   );
 eval {$wn->version(1_000_000)};
 like($@,                              qr/Unsupported api version: '1000000'/,  'set version'   );
-is($wn->format('perl'),               'perl',                           'set format'    );
+is($wn->format('xml'),               'xml',                           'set format'    );
 is($wn->cache(2),                      2,                               'set cache'     );
 
 done_testing(TESTS);
