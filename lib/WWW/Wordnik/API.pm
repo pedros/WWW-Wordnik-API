@@ -1,4 +1,4 @@
-package WWW::Wordnik::API;
+6~package WWW::Wordnik::API;
 
 use warnings;
 use strict;
@@ -540,8 +540,8 @@ If the suggester is enabled, you can tell it to return the best match with C<use
 =item phrases($word, %args)
 
 You can fetch interesting bi-gram phrases containing a word.
-The “mi” and “wlmi” elements refer to “mutual information” 
-and “weighted mutual information” and will be explained in detail via future blog post.
+The "mi" and "wlmi" elements refer to "mutual information" 
+and "weighted mutual information" and will be explained in detail via future blog post.
 See L<http://docs.wordnik.com/api/methods#phrases>.
 
 C<$word> is the word to look up. C<%args> accepts:
@@ -551,7 +551,7 @@ Default C<count>: I<5>. Specify the number of results returned.
 
 =item definitions($word, %args)
 
-Definitions for words are available from Wordnik’s keying of the Century Dictionary and parse of the Webster GCIDE.
+Definitions for words are available from Wordnik's keying of the Century Dictionary and parse of the Webster GCIDE.
 The Dictionary Model XSD is available in L<http://github.com/wordnik/api-examples/blob/master/docs/dictionary.xsd> in GitHub.
 See L<http://docs.wordnik.com/api/methods#definitions>.
 
@@ -568,7 +568,7 @@ The available partOfSpeech values are:
 
 =item examples($word)
 
-You can retrieve 5 example sentences for a words in Wordnik’s alpha corpus. Each example contains the source document and a source URL, if it exists.
+You can retrieve 5 example sentences for a words in Wordnik's alpha corpus. Each example contains the source document and a source URL, if it exists.
 See L<http://docs.wordnik.com/api/methods#examples>.
 
 C<$word> is the word to look up.
@@ -590,7 +590,7 @@ The available type values are:
 
 =item frequency($word)
 
-You can see how common particular words occur in Wordnik’s alpha corpus, ordered by year.
+You can see how common particular words occur in Wordnik's alpha corpus, ordered by year.
 See L<http://docs.wordnik.com/api/methods#freq>.
 
 C<$word> is the word to look up.
@@ -619,7 +619,7 @@ Default C<startAt>: I<0>. You can also specify the starting index for the result
 
 =item wordoftheday
 
-You can fetch Wordnik’s word-of-the day which contains definitions and example sentences.
+You can fetch Wordnik's word-of-the day which contains definitions and example sentences.
 See L<http://docs.wordnik.com/api/methods#wotd>.
 
 
