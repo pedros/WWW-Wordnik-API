@@ -112,7 +112,7 @@ sub cache {
     my ( $self, $cache ) = @_;
 
     if ( defined $cache and $cache =~ m/\d+/ ) {
-        return $self->{cache} = $cache;
+        return $self->{cache} = $fields->{_cache}->{max} = $cache;
     }
     else {
         return $self->{cache};
@@ -327,6 +327,8 @@ sub randomWord {
     return $self->_send_request( $self->_build_request( 'words', $query ) );
 }
 
+### internal methods
+
 sub _build_request {
     my ( $self, $namespace, $query ) = @_;
 
@@ -342,30 +344,47 @@ sub _send_request {
 
     return $request if $self->{debug};
 
+    # cache
     if ( $self->cache and exists $self->{_cache}->{requests}->{$request} ) {
-
         return ${ $self->{_cache}->{requests}->{$request} };
     }
-    else {
-        my $data = $self->{_user_agent}->get($request)->content;
 
-        $data = from_json($data) if 'perl' eq $self->format;
+    # request
+    else {
+        my $response = $self->{_user_agent}->get($request);
+
+        my $data = $self->_validate_response($response);
+
+        $data = from_json($data)
+            if 'perl' eq $self->format;
 
         return $self->_cache_data( $request, $data );
     }
 }
 
+sub _validate_response {
+    my ( $self, $response ) = @_;
+
+    return $response->decoded_content
+        if $response->is_success
+            or $response->is_redirect;
+
+    croak $response->as_string
+        if ( $response->is_error
+        or $response->is_info );
+}
+
 sub _pop_cache {
     my ($self) = @_;
-
     my $c = $self->{_cache};
 
+    return unless 'ARRAY' eq ref $c->{data};
     my $oldest = pop @{ $c->{data} };
 
+    return unless 'ARRAY' eq ref $oldest;
     my ( $request, $data ) = @{$oldest};
 
     delete $c->{requests}->{$request};
-
     return $data;
 }
 
