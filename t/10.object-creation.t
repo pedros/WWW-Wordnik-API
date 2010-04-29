@@ -2,24 +2,24 @@
 
 use strict;
 use warnings;
-use constant TESTS => 4;
+use constant TESTS   => 4;
 use Test::More tests => TESTS;
 
-BEGIN { use_ok( 'WWW::Wordnik::API' ); }
-require_ok( 'WWW::Wordnik::API' );
+BEGIN { use_ok('WWW::Wordnik::API'); }
+require_ok('WWW::Wordnik::API');
 
 my $wn = new_ok('WWW::Wordnik::API');
 
 {
-  my $VAR1;
-  eval join q{}, <DATA>;
+    my $VAR1;
+    eval join q{}, <DATA>;
 
-  # need to delete code refs, since is_deeply only checks referents
-  # also delete _json, which value depends on JSON being installed
-  delete @{$VAR1}{qw/_user_agent _json/};
-  delete @{$wn}{qw/_user_agent _json/};
+    # need to delete code refs, since is_deeply only checks referents
+    # also delete _json, which value depends on JSON being installed
+    delete @{$VAR1}{qw/_user_agent _json/};
+    delete @{$wn}{qw/_user_agent _json/};
 
-  is_deeply($wn, $VAR1, 'Object creation');
+    is_deeply( $wn, $VAR1, 'Object creation' );
 }
 
 done_testing(TESTS);
@@ -32,9 +32,8 @@ $VAR1 = bless( {
                                  'json' => 1
                                },
                  '_cache' => {
-                               'count' => 0,
+                               'data'     => [],
                                'requests' => {},
-                               'last_request' => undef,
                                'max' => 10
                              },
                  'server_uri' => 'http://api.wordnik.com/api-v3',
