@@ -12,3 +12,5 @@ cover_db
 pod2htm*.tmp
 WWW-Wordnik-API-*
 SIGNATURE
+MANIFEST.SKIP
+MYMETA.yml
