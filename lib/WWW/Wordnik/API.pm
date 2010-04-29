@@ -427,7 +427,9 @@ WWW::Wordnik::API - Wordnik API implementation
 
 =head1 VERSION
 
-This document describes WWW::Wordnik::API version 0.0.1
+This document describes WWW::Wordnik::API version 0.0.2.
+
+The latest development revision is available at L<git://github.com/pedros/WWW-Wordnik-API.git>.
 
 
 =head1 SYNOPSIS
@@ -480,9 +482,10 @@ This module implements version 3 of the Wordnik API (L<http://docs.wordnik.com/a
 It provides a simple object-oriented interface with methods named after the REST ones provided by Wordnik.
 You should therefore be able to follow their documentation only and still work with this module.
 
-At this point, all this module does is build request URIs and ship them out as GET methods to LWP::UserAgent.
-Response headers are not checked for 404s, etc. Likewise, response data is not post-processed in any way, other
-than optionally being parsed from C<JSON> to C<Perl> data structures. Data::Dumper should be of help there.
+At this point, this module builds request URIs and ship them out as GET methods to LWP::UserAgent.
+Response headers are checked for error codes (specifically, throw exception on headers anything other than 2/3xx).
+Response data is not post-processed in any way, other than optionally being parsed from C<JSON> to C<Perl> data structures.
+Data::Dumper should be of help there.
 
 
 =head1 INTERFACE 
@@ -747,8 +750,8 @@ None reported.
 
 No bugs have been reported.
 
-Response headers are not checked for 404s, etc. Likewise, response data is not post-processed in any way, other
-than optionally being parsed from C<JSON> to C<Perl> data structures. Data::Dumper should be of help there.
+Response data is not post-processed in any way, other than optionally being parsed from C<JSON> to C<Perl> data structures.
+Data::Dumper should be of help there.
 
 Please report any bugs or feature requests to
 C<bug-www-wordnik-api@rt.cpan.org>, or through the web interface at
@@ -759,13 +762,11 @@ L<http://rt.cpan.org>.
 
 =over
 
-=item Error checking
-
-Implement basic HTTP error checking on response headers.
-
 =item Post-processing
 
 Add filtering methods on response data.
+
+=item Implement WWW::Wordnik::API::Response class to handle the above
 
 =back
 
