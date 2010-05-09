@@ -6,7 +6,7 @@ use Carp;
 
 use LWP::UserAgent;
 
-use version; our $VERSION = qv('0.0.1');
+use version; our $VERSION = qv('0.0.2');
 
 use constant {
     API_VERSION  => 3,
