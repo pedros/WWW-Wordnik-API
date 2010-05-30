@@ -2,7 +2,7 @@ NAME
     WWW::Wordnik::API - Wordnik API implementation
 
 VERSION
-    This document describes WWW::Wordnik::API version 0.0.2.
+    This document describes WWW::Wordnik::API version 0.0.3.
 
     The latest development revision is available at
     <git://github.com/pedros/WWW-Wordnik-API.git>.
@@ -269,7 +269,9 @@ INCOMPATIBILITIES
     None reported.
 
 BUGS AND LIMITATIONS
-    No bugs have been reported.
+    On versions 0.0.1 and 0.0.2, creation of a second object would clobber
+    the first object's instance variables, resulting in unexpected
+    behaviour. This is fixed in 0.0.3.
 
     Response data is not post-processed in any way, other than optionally
     being parsed from "JSON" to "Perl" data structures. Data::Dumper should
