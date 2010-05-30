@@ -6,7 +6,7 @@ use Carp;
 
 use LWP::UserAgent;
 
-use version; our $VERSION = qv('0.0.2');
+use version; our $VERSION = qv('0.0.3');
 
 use constant {
     API_VERSION  => 3,
@@ -19,63 +19,62 @@ use constant {
     USE_JSON     => 0,
 };
 
-my $fields = {
-    server_uri  => API_BASE_URL . q{/api-v} . API_VERSION,
-    api_key     => API_KEY,
-    version     => API_VERSION,
-    format      => API_FORMAT,
-    cache       => CACHE,
-    debug       => DEBUG,
-    _formats    => { json => 1, xml => 1, perl => 1 },
-    _versions   => { 1 => 0, 2 => 0, 3 => 1 },
-    _cache      => { max => CACHE, requests => {}, data => [] },
-    _user_agent => LWP::UserAgent->new(
-        agent           => 'Perl-' . MODULE_NAME . q{/} . $VERSION,
-        default_headers => HTTP::Headers->new( ':api_key' => API_KEY ),
-    ),
-    _json => USE_JSON,
-};
+sub _fields {
+    {   server_uri  => API_BASE_URL . q{/api-v} . API_VERSION,
+        api_key     => API_KEY,
+        version     => API_VERSION,
+        format      => API_FORMAT,
+        cache       => CACHE,
+        debug       => DEBUG,
+        _formats    => { json => 1, xml => 1, perl => 1 },
+        _versions   => { 1 => 0, 2 => 0, 3 => 1 },
+        _cache      => { max => CACHE, requests => {}, data => [] },
+        _user_agent => LWP::UserAgent->new(
+            agent           => 'Perl-' . MODULE_NAME . q{/} . $VERSION,
+            default_headers => HTTP::Headers->new( ':api_key' => API_KEY ),
+        ),
+        _json => USE_JSON,
+    };
+}
 
 sub new {
     my ( $class, %args ) = @_;
 
-    eval { require JSON; JSON->import() };
-    $fields->{_json} = 'available' unless $@;
+    my $self = bless( _fields(), $class );
 
-    bless $fields, $class;
+    eval { require JSON; JSON->import() };
+    $self->{_json} = 'available' unless $@;
+
+    bless $self, $class;
 
     while ( my ( $key, $value ) = each %args ) {
         croak "Can't access '$key' field in class $class"
-            if !exists $fields->{$key}
+            if !exists $self->{$key}
                 or $key =~ m/^_/;
 
-        $fields->$key($value);
+        $self->$key($value);
     }
 
-    return $fields;
+    return $self;
 }
 
 sub server_uri {
     my ( $self, $uri ) = @_;
 
     if ( defined $uri ) {
-        return $self->{server_uri} = $uri;
+        $self->{server_uri} = $uri;
     }
-    else {
-        return $self->{server_uri};
-    }
+    return $self->{server_uri};
 }
 
 sub api_key {
     my ( $self, $key ) = @_;
 
     if ( defined $key ) {
-        $fields->{_user_agent}->default_headers->header( ':api_key' => $key );
-        return $self->{api_key} = $key;
+        $self->{_user_agent}->default_headers->header( ':api_key' => $key );
+        $self->{api_key} = $key;
     }
-    else {
-        return $self->{api_key};
-    }
+    return $self->{api_key};
 }
 
 sub version {
@@ -84,11 +83,9 @@ sub version {
     if ( defined $version ) {
         croak "Unsupported api version: '$version'"
             unless $self->{_versions}->{$version};
-        return $self->{version} = $version;
+        $self->{version} = $version;
     }
-    else {
-        return $self->{version};
-    }
+    return $self->{version};
 }
 
 sub format {
@@ -101,33 +98,27 @@ sub format {
         $self->_json_available
             if 'perl' eq $format;
 
-        return $self->{format} = $format;
+        $self->{format} = $format;
     }
-    else {
-        return $self->{format};
-    }
+    return $self->{format};
 }
 
 sub cache {
     my ( $self, $cache ) = @_;
 
     if ( defined $cache and $cache =~ m/\d+/ ) {
-        return $self->{cache} = $fields->{_cache}->{max} = $cache;
+        $self->{cache} = $self->{_cache}->{max} = $cache;
     }
-    else {
-        return $self->{cache};
-    }
+    return $self->{cache};
 }
 
 sub debug {
     my ( $self, $debug ) = @_;
 
     if ( defined $debug ) {
-        return $self->{debug} = $debug;
+        $self->{debug} = $debug;
     }
-    else {
-        return $self->{debug};
-    }
+    return $self->{debug};
 }
 
 sub word {
@@ -427,7 +418,7 @@ WWW::Wordnik::API - Wordnik API implementation
 
 =head1 VERSION
 
-This document describes WWW::Wordnik::API version 0.0.2.
+This document describes WWW::Wordnik::API version 0.0.3.
 
 The latest development revision is available at L<git://github.com/pedros/WWW-Wordnik-API.git>.
 
@@ -748,7 +739,8 @@ None reported.
 
 =head1 BUGS AND LIMITATIONS
 
-No bugs have been reported.
+On versions 0.0.1 and 0.0.2, creation of a second object would clobber the first object's instance variables,
+resulting in unexpected behaviour. This is fixed in 0.0.3.
 
 Response data is not post-processed in any way, other than optionally being parsed from C<JSON> to C<Perl> data structures.
 Data::Dumper should be of help there.
