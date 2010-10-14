@@ -232,6 +232,7 @@ sub related {
             hyponym    => 0,
             variant    => 0,
         },
+        limit => 1000,
     );
 
     my $query = "$word/related";
@@ -248,6 +249,13 @@ sub related {
         else {
             croak "Parameter 'type' requires a reference to an array";
         }
+    }
+
+    if ( exists $args{limit} ) {
+        if ( 0 >= $args{limit} ) {
+            croak "Parameter 'limit' must be a positive number";
+        }
+        $query .= "?limit=$args{limit}";
     }
 
     return $self->_send_request( $self->_build_request( 'word', $query ) );
