@@ -236,6 +236,7 @@ sub related {
     );
 
     my $query = "$word/related";
+    $query .= '?' if keys %args;
 
     if ( exists $args{type} ) {
         if ( 'ARRAY' eq ref $args{type} ) {
@@ -244,7 +245,7 @@ sub related {
                 croak "Invalid argument key or value: '$type'"
                     unless exists $parameters{type}->{$type};
             }
-            $query .= "?type=" . join q{,}, @{ $args{type} };
+            $query .= "type=" . join q{,}, @{ $args{type} };
         }
         else {
             croak "Parameter 'type' requires a reference to an array";
@@ -255,7 +256,8 @@ sub related {
         if ( 0 >= $args{limit} ) {
             croak "Parameter 'limit' must be a positive number";
         }
-        $query .= "?limit=$args{limit}";
+        $query .= '&' if exists $args{type};
+        $query .= "limit=$args{limit}";
     }
 
     return $self->_send_request( $self->_build_request( 'word', $query ) );
