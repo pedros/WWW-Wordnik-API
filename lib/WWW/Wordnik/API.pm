@@ -225,12 +225,15 @@ sub related {
 
     my %parameters = (
         type => {
-            synonym    => 0,
-            antonym    => 0,
-            form       => 0,
-            equivalent => 0,
-            hyponym    => 0,
-            variant    => 0,
+            synonym           => 0,
+            antonym           => 0,
+            form              => 0,
+            hyponym           => 0,
+            variant           => 0,
+            'verb-stem'       => 0,
+            'verb-form'       => 0,
+            'cross-reference' => 0,
+            'same-context'    => 0,
         },
         limit => 1000,
     );
@@ -379,7 +382,7 @@ sub _pop_cache {
     my ($self) = @_;
     my $c = $self->{_cache};
 
-    return unless 'ARRAY' eq ref $c->{data};
+    return unless $c && 'ARRAY' eq ref $c->{data};
     my $oldest = pop @{ $c->{data} };
 
     return unless 'ARRAY' eq ref $oldest;
@@ -393,6 +396,7 @@ sub _load_cache {
     my ( $self, $request, $data ) = @_;
 
     my $c = $self->{_cache};
+    return unless $c;
 
     $c->{requests}->{$request} = \$data;
 
@@ -405,9 +409,9 @@ sub _cache_data {
     my ( $self, $request, $data ) = @_;
 
     my $c = $self->{_cache};
+    return unless $c;
 
-    $c->_pop_cache
-        if @{ $c->{data} } >= $c->{max};
+    $self->_pop_cache if @{ $c->{data} } >= $c->{max};
 
     return $self->_load_cache( $request, $data );
 }
