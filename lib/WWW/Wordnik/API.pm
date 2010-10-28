@@ -6,7 +6,7 @@ use Carp;
 
 use LWP::UserAgent;
 
-use version; our $VERSION = qv('0.0.3');
+use version; our $VERSION = qv('0.0.4');
 
 use constant {
     API_VERSION  => 3,
@@ -432,7 +432,7 @@ WWW::Wordnik::API - Wordnik API implementation
 
 =head1 VERSION
 
-This document describes WWW::Wordnik::API version 0.0.3.
+This document describes WWW::Wordnik::API version 0.0.4.
 
 The latest development revision is available at L<git://github.com/pedros/WWW-Wordnik-API.git>.
 
@@ -466,7 +466,7 @@ The latest development revision is available at L<git://github.com/pedros/WWW-Wo
     $p->examples('Java');
 
     $p->related('Lisp');
-    $p->related('Lisp', type => [qw/synonym antonym form equivalent hyponym variant/]);
+    $p->related('Lisp', type => [qw/synonym antonym form hyponym variant verb-stem verb-form cross-reference same-context/]);
 
     $p->frequency('Scheme');
 
@@ -483,7 +483,7 @@ The latest development revision is available at L<git://github.com/pedros/WWW-Wo
 
 =head1 DESCRIPTION
 
-This module implements version 3 of the Wordnik API (L<http://docs.wordnik.com/api>).
+This module implements version 3.2 of the Wordnik API (L<http://docs.wordnik.com/api>).
 It provides a simple object-oriented interface with methods named after the REST ones provided by Wordnik.
 You should therefore be able to follow their documentation only and still work with this module.
 
@@ -519,7 +519,7 @@ Data::Dumper should be of help there.
 All selector methods can be assigned to, or retrieved from, as follows:
 
     $WN->method($value) # assign
-    $WN->method        # retrieve
+    $WN->method         # retrieve
 
 =over
 
@@ -633,7 +633,7 @@ Default C<type>: I<empty>. Return one or many relationship types. Pass multiple 
 
 The available type values are:
 
-    [synonym, antonym, form, equivalent, hyponym, variant]
+    [synonym, antonym, form, hyponym, variant, verb-stem, verb-form, cross-reference, same-context]
 
 
 =item frequency($word)
