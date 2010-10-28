@@ -2,7 +2,7 @@ NAME
     WWW::Wordnik::API - Wordnik API implementation
 
 VERSION
-    This document describes WWW::Wordnik::API version 0.0.3.
+    This document describes WWW::Wordnik::API version 0.0.4.
 
     The latest development revision is available at
     <git://github.com/pedros/WWW-Wordnik-API.git>.
@@ -35,7 +35,7 @@ SYNOPSIS
         $p->examples('Java');
 
         $p->related('Lisp');
-        $p->related('Lisp', type => [qw/synonym antonym form equivalent hyponym variant/]);
+        $p->related('Lisp', type => [qw/synonym antonym form hyponym variant verb-stem verb-form cross-reference same-context/]);
 
         $p->frequency('Scheme');
 
@@ -50,7 +50,7 @@ SYNOPSIS
         $p->randomWord(hasDictionaryDef => 'true');
 
 DESCRIPTION
-    This module implements version 3 of the Wordnik API
+    This module implements version 3.2 of the Wordnik API
     (<http://docs.wordnik.com/api>). It provides a simple object-oriented
     interface with methods named after the REST ones provided by Wordnik.
     You should therefore be able to follow their documentation only and
@@ -79,7 +79,7 @@ INTERFACE
     All selector methods can be assigned to, or retrieved from, as follows:
 
         $WN->method($value) # assign
-        $WN->method        # retrieve
+        $WN->method         # retrieve
 
     server_uri()
     server_uri($uri)
@@ -173,7 +173,7 @@ INTERFACE
 
         The available type values are:
 
-            [synonym, antonym, form, equivalent, hyponym, variant]
+            [synonym, antonym, form, hyponym, variant, verb-stem, verb-form, cross-reference, same-context]
 
     frequency($word)
         You can see how common particular words occur in Wordnik's alpha
