@@ -48,7 +48,7 @@ is( $wn->definitions(
 is( $wn->examples('Java'), shift @responses, 'examples' );
 is( $wn->related('Lisp'),  shift @responses, 'related with no options' );
 is( $wn->related(
-        'Lisp', type => [qw/synonym antonym form equivalent hyponym variant/]
+        'Lisp', type => [qw/synonym antonym form hyponym variant verb-stem verb-form cross-reference same-context/]
     ),
     shift @responses,
     'related with type'
@@ -78,7 +78,7 @@ http://api.wordnik.com/api-v3/word.json/Ruby/definitions?count=20
 http://api.wordnik.com/api-v3/word.json/Ruby/definitions?partOfSpeech=noun,verb,adjective,adverb,idiom,article,abbreviation,preposition,prefix,interjection,suffix
 http://api.wordnik.com/api-v3/word.json/Java/examples
 http://api.wordnik.com/api-v3/word.json/Lisp/related
-http://api.wordnik.com/api-v3/word.json/Lisp/related?type=synonym,antonym,form,equivalent,hyponym,variant
+http://api.wordnik.com/api-v3/word.json/Lisp/related?type=synonym,antonym,form,hyponym,variant,verb-stem,verb-form,cross-reference,same-context
 http://api.wordnik.com/api-v3/word.json/Scheme/frequency
 http://api.wordnik.com/api-v3/word.json/Prolog/punctuationFactor
 http://api.wordnik.com/api-v3/suggest.json/C
