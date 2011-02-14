@@ -11,9 +11,9 @@ require_ok( 'WWW::Wordnik::API' );
 my $wn = WWW::Wordnik::API->new();
 
 # defaults
-is($wn->server_uri, 'http://api.wordnik.com/api-v3', 'get server_uri');
+is($wn->server_uri, 'http://api.wordnik.com/v4', 'get server_uri');
 is($wn->api_key,    'YOUR KEY HERE',                 'get api_key'   );
-is($wn->version,    3,                               'get version'   );
+is($wn->version,    4,                               'get version'   );
 is($wn->format,     'json',                          'get format'    );
 is($wn->cache,      10,                              'get cache'     );
 

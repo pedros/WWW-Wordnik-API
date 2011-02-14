@@ -38,7 +38,7 @@ $VAR1 = bless( {
                              },
                  'server_uri' => 'http://api.wordnik.com/v4',
                  '_json' => 'available',
-                 'version' => 3,
+                 'version' => 4,
                  '_versions' => {
                                   '1' => 0,
                                   '3' => 1,
