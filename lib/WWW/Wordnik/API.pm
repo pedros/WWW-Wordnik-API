@@ -6,10 +6,10 @@ use Carp;
 
 use LWP::UserAgent;
 
-use version; our $VERSION = qv('0.0.4');
+use version; our $VERSION = qv('0.0.5');
 
 use constant {
-    API_VERSION  => 3,
+    API_VERSION  => 4,
     API_BASE_URL => 'http://api.wordnik.com',
     API_KEY      => 'YOUR KEY HERE',
     API_FORMAT   => 'json',
@@ -20,14 +20,14 @@ use constant {
 };
 
 sub _fields {
-    {   server_uri  => API_BASE_URL . q{/api-v} . API_VERSION,
+    {   server_uri  => API_BASE_URL . q{/v} . API_VERSION,
         api_key     => API_KEY,
         version     => API_VERSION,
         format      => API_FORMAT,
         cache       => CACHE,
         debug       => DEBUG,
         _formats    => { json => 1, xml => 1, perl => 1 },
-        _versions   => { 1 => 0, 2 => 0, 3 => 1 },
+        _versions   => { 1 => 0, 2 => 0, 3 => 1, 4 => 1 },
         _cache      => { max => CACHE, requests => {}, data => [] },
         _user_agent => LWP::UserAgent->new(
             agent           => 'Perl-' . MODULE_NAME . q{/} . $VERSION,
@@ -422,7 +422,6 @@ sub _json_available {
     croak "The operation you requested requires JSON to be installed"
         unless $self->{_json};
 }
-
 1;    # Magic true value required at end of module
 __END__
 
@@ -432,7 +431,7 @@ WWW::Wordnik::API - Wordnik API implementation
 
 =head1 VERSION
 
-This document describes WWW::Wordnik::API version 0.0.4.
+This document describes WWW::Wordnik::API version 0.0.5.
 
 The latest development revision is available at L<git://github.com/pedros/WWW-Wordnik-API.git>.
 
@@ -483,7 +482,7 @@ The latest development revision is available at L<git://github.com/pedros/WWW-Wo
 
 =head1 DESCRIPTION
 
-This module implements version 3.2 of the Wordnik API (L<http://docs.wordnik.com/api>).
+This module implements version 4.0 of the Wordnik API (L<http://developer.wordnik.com/api>).
 It provides a simple object-oriented interface with methods named after the REST ones provided by Wordnik.
 You should therefore be able to follow their documentation only and still work with this module.
 
@@ -503,9 +502,9 @@ Data::Dumper should be of help there.
 =item new(%args)
 
     my %args = (
-        server_uri => 'http://api.wordnik.com/api-v3',
+        server_uri => 'http://api.wordnik.com/v4',
         api_key    => 'your key',
-        version    => '3',
+        version    => '4',
         format     => 'json', # json | xml | perl
     );
 
@@ -527,7 +526,7 @@ All selector methods can be assigned to, or retrieved from, as follows:
 
 =item server_uri($uri)
 
-Default C<$uri>: L<http://api.wordnik.com/api-v3>
+Default C<$uri>: L<http://api.wordnik.com/v4>
 
 
 =item api_key()
@@ -541,7 +540,7 @@ Required C<$key>: Your API key, which can be requested at L<http://api.wordnik.c
 
 =item version($version)
 
-Default C<$version>: I<3>. Only API version 3 (the latest) is currently supported.
+Default C<$version>: I<4>. This module supports API version 3 and 4 (default).
 
 
 =item format()
@@ -674,7 +673,7 @@ See L<http://docs.wordnik.com/api/methods#wotd>.
 =item randomWord(%args)
 
 You can fetch a random word from the Alpha Corpus.
-See L<http://docs.wordnik.com/api/methods#random>.
+See L<http://http://developer.wordnik.com/docs>.
 
 C<%args> accepts:
 

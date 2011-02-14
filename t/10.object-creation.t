@@ -8,7 +8,7 @@ use Test::More tests => TESTS;
 BEGIN { use_ok('WWW::Wordnik::API'); }
 require_ok('WWW::Wordnik::API');
 
-my $wn = new_ok('WWW::Wordnik::API');
+my $wn = Test::More::new_ok('WWW::Wordnik::API');
 
 {
     my $VAR1;
@@ -36,12 +36,13 @@ $VAR1 = bless( {
                                'requests' => {},
                                'max' => 10
                              },
-                 'server_uri' => 'http://api.wordnik.com/api-v3',
+                 'server_uri' => 'http://api.wordnik.com/v4',
                  '_json' => 'available',
                  'version' => 3,
                  '_versions' => {
                                   '1' => 0,
                                   '3' => 1,
+                                  '4' => 1,
                                   '2' => 0
                                 },
                  'api_key' => 'YOUR KEY HERE',

@@ -2,7 +2,7 @@ NAME
     WWW::Wordnik::API - Wordnik API implementation
 
 VERSION
-    This document describes WWW::Wordnik::API version 0.0.4.
+    This document describes WWW::Wordnik::API version 0.0.5.
 
     The latest development revision is available at
     <git://github.com/pedros/WWW-Wordnik-API.git>.
@@ -50,8 +50,8 @@ SYNOPSIS
         $p->randomWord(hasDictionaryDef => 'true');
 
 DESCRIPTION
-    This module implements version 3.2 of the Wordnik API
-    (<http://docs.wordnik.com/api>). It provides a simple object-oriented
+    This module implements version 4.0 of the Wordnik API
+    (<http://developer.wordnik.com/docs>). It provides a simple object-oriented
     interface with methods named after the REST ones provided by Wordnik.
     You should therefore be able to follow their documentation only and
     still work with this module.
@@ -67,9 +67,9 @@ INTERFACE
   CLASS METHODS
     new(%args)
             my %args = (
-                server_uri => 'http://api.wordnik.com/api-v3',
+                server_uri => 'http://api.wordnik.com/v4',
                 api_key    => 'your key',
-                version    => '3',
+                version    => '4',
                 format     => 'json', # json | xml | perl
             );
 
@@ -83,7 +83,7 @@ INTERFACE
 
     server_uri()
     server_uri($uri)
-        Default $uri: <http://api.wordnik.com/api-v3>
+        Default $uri: <http://api.wordnik.com/v4>
 
     api_key()
     api_key($key)
@@ -92,8 +92,7 @@ INTERFACE
 
     version()
     version($version)
-        Default $version: *3*. Only API version 3 (the latest) is currently
-        supported.
+        Default $version: *4*. API versions 3 and 4 are supported.
 
     format()
     format($format)
@@ -113,7 +112,7 @@ INTERFACE
   OBJECT METHODS
     word($word, %args)
         This returns the word you requested, assuming it is found in our
-        corpus. See <http://docs.wordnik.com/api/methods#words>.
+        corpus. See <http://developer.wordnik.com/docs>.
 
         $word is the word to look up. %args accepts:
 
@@ -129,7 +128,7 @@ INTERFACE
         You can fetch interesting bi-gram phrases containing a word. The
         "mi" and "wlmi" elements refer to "mutual information" and "weighted
         mutual information" and will be explained in detail via future blog
-        post. See <http://docs.wordnik.com/api/methods#phrases>.
+        post. See <http://developer.wordnik.com/docs>.
 
         $word is the word to look up. %args accepts:
 
@@ -141,7 +140,7 @@ INTERFACE
         Model XSD is available in
         <http://github.com/wordnik/api-examples/blob/master/docs/dictionary.
         xsd> in GitHub. See
-        <http://docs.wordnik.com/api/methods#definitions>.
+        <http://developer.wordnik.com/docs>.
 
         $word is the word to look up. %args accepts:
 
@@ -158,13 +157,13 @@ INTERFACE
     examples($word)
         You can retrieve 5 example sentences for a words in Wordnik's alpha
         corpus. Each example contains the source document and a source URL,
-        if it exists. See <http://docs.wordnik.com/api/methods#examples>.
+        if it exists. See <http://developer.wordnik.com/docs>.
 
         $word is the word to look up.
 
     related($word, %args)
         You retrieve related words for a particular word. See
-        <http://docs.wordnik.com/api/methods#relateds>.
+        <http://developer.wordnik.com/docs>.
 
         $word is the word to look up. %args accepts:
 
@@ -178,13 +177,13 @@ INTERFACE
     frequency($word)
         You can see how common particular words occur in Wordnik's alpha
         corpus, ordered by year. See
-        <http://docs.wordnik.com/api/methods#freq>.
+        <http://developer.wordnik.com/docs>.
 
         $word is the word to look up.
 
     punctuationFactor($word)
         You can see how common particular words are used with punctuation.
-        See <http://docs.wordnik.com/api/methods#punc>.
+        See <http://developer.wordnik.com/docs>.
 
         $word is the word to look up.
 
@@ -193,7 +192,7 @@ INTERFACE
         fragment (start of a word) and show what other words start with the
         same letters. The results are based on corpus frequency, not static
         word lists, so you have access to more dynamic words in the
-        language. See <http://docs.wordnik.com/api/methods#auto>.
+        language. See <http://developer.wordnik.com/docs>.
 
         $word is the word to look up. %args accepts:
 
@@ -206,11 +205,11 @@ INTERFACE
     wordoftheday
         You can fetch Wordnik's word-of-the day which contains definitions
         and example sentences. See
-        <http://docs.wordnik.com/api/methods#wotd>.
+        <http://developer.wordnik.com/docs>.
 
     randomWord(%args)
         You can fetch a random word from the Alpha Corpus. See
-        <http://docs.wordnik.com/api/methods#random>.
+        <http://developer.wordnik.com/docs>.
 
         %args accepts:
 
@@ -253,7 +252,7 @@ DIAGNOSTICS
         Supported formats are 'perl', 'json', 'xml'.
 
     "Unsupported api version: '$version'"
-        The only API version supported by this module is 3.
+        Only API versions *3* and *4* are supported by this module.
 
 CONFIGURATION AND ENVIRONMENT
     WWW::Wordnik::API requires no configuration files or environment
